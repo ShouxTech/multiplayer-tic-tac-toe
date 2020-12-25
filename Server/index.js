@@ -52,7 +52,7 @@ io.on('connection', socket => {
 		}
 
 		const setPick = (char, nextChar, location) => {
-			if (currentPlayer != char) return;
+			if (currentPlayer != char || board[location] != '') return;
 
 			board[location] = char;
 
