@@ -14,6 +14,13 @@ io.on('connection', socket => {
 	if (waiting.length == 0) {
 		waiting.push(socket);
 		socket.emit('waiting');
+		socket.on('disconnect', () => {
+			for (let i = 0; i < waiting.length; i++) {
+				if (waiting[i] == socket) {
+					waiting.splice(i, 1);
+				}
+			}
+		});
 	} else {
 		let opponent = waiting[0];
 
@@ -30,7 +37,7 @@ io.on('connection', socket => {
 		socket.emit('started', 'O');
 
 		const getWinner = () => {
-			const lines = [
+			let lines = [
 				[0, 1, 2],
 				[3, 4, 5],
 				[6, 7, 8],
@@ -42,7 +49,7 @@ io.on('connection', socket => {
 			];
 
 			for (let i = 0; i < lines.length; i++) {
-				const [a, b, c] = lines[i];
+				let [a, b, c] = lines[i];
 				if (board[a] && board[a] == board[b] && board[a] == board[c]) {
 					return board[a];
 				}
@@ -51,19 +58,39 @@ io.on('connection', socket => {
 			return;
 		}
 
+		const isTie = () => {
+			for (let i = 0; i < board.length; i++) {
+				if (board[i] == '') {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		const emitToAll = (...args) => {
+			opponent.emit(...args);
+			socket.emit(...args);
+		}
+
 		const setPick = (char, nextChar, location) => {
 			if (currentPlayer != char || board[location] != '') return;
 
 			board[location] = char;
 
-			opponent.emit('picked', char, location);
-			socket.emit('picked', char, location);
+			emitToAll('picked', char, location);
 
 			let winner = getWinner();
 			if (winner) {
-				opponent.emit('winner', winner);
-				socket.emit('winner', winner);
 				currentPlayer = '';
+				emitToAll('winner', winner);
+				return;
+			}
+
+			let tie = isTie();
+			if (tie) {
+				currentPlayer = '';
+				emitToAll('tied');
 				return;
 			}
 
@@ -80,11 +107,13 @@ io.on('connection', socket => {
 
 		opponent.on('disconnect', () => {
 			if (currentPlayer == '') return;
+			currentPlayer = '';
 			socket.emit('winner', 'O');
 		});
 
 		socket.on('disconnect', () => {
 			if (currentPlayer == '') return;
+			currentPlayer = '';
 			opponent.emit('winner', 'X');
 		});
 	}
