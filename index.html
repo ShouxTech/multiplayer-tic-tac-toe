@@ -1,0 +1,107 @@
+<html>
+	<head>
+		<title>Tic Tac Toe</title>
+
+		<meta charset = "utf-8">
+
+		<meta name = "author" content = "CriShoux">
+		<meta name = "description" content = "Multiplayer Tic Tac Toe">
+		<meta name = "keywords" content = "CriShoux, Multiplayer, Tic Tac Toe, Stop, looking, at, my, source">
+
+		<meta property = "og:title" content = "Tic Tac Toe">
+		<meta property = "og:description" content = "Multiplayer Tic Tac Toe">
+		<meta property = "og:type" content = "website">
+		<!-- <meta property = "og:url" content = "https://owlhub.ga"> -->
+		<!-- <meta property = "og:secure_url" content = "https://owlhub.ga"> -->
+		<!-- <meta property = "og:image" content = "https://owlhub.ga/Logo.ico"> -->
+
+		<script src="https://cdn.socket.io/socket.io-3.0.0.js"></script>
+
+		<style>
+			body {
+				background-color: rgb(25, 25, 25);
+                color: white;
+                font-family: "Trebuchet MS";
+			}
+
+			.boardRow {
+				display: table;
+			}
+
+			.square {
+				background: rgb(25, 25, 25);
+				color: white;
+				border: 1px solid white;
+				float: left;
+				font-size: 30px;
+				font-weight: bold;
+				width: 90px;
+				height: 90px;
+				text-align: center;
+				cursor: pointer;
+			}
+
+			.square:focus {
+				outline: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="waitingScreen">
+			<h2>Waiting for opponent to connect</h1>
+		</div>
+
+		<div id="gameBoard" hidden>
+			<div class="boardRow"> <button class="square"> </button><button class="square"> </button><button class="square"> </button> </div>
+
+			<div class="boardRow"> <button class="square"> </button><button class="square"> </button><button class="square"> </button> </div>
+
+			<div class="boardRow"> <button class="square"> </button><button class="square"> </button><button class="square"> </button> </div>
+
+			<h4 id="status">It's X's turn</h4>
+
+			<h5 id="character">You are _</h5>
+		</div>
+
+		<script>
+			const socket = io('ws://tic-tac-toe-server-shoux.herokuapp.com');
+
+			const waitingScreen = document.getElementById('waitingScreen');
+			const gameBoard = document.getElementById('gameBoard');
+			const squares = document.getElementsByClassName('square');
+			const status = document.getElementById('status');
+			const character = document.getElementById('character');
+
+			socket.on('waiting', () => {
+				gameBoard.hidden = true;
+				waitingScreen.hidden = false;
+			});
+
+			socket.on('started', (char) => {
+				for (square of squares) {
+					square.innerHTML = '';
+				}
+				character.innerHTML = `You are ${char}`;
+				waitingScreen.hidden = true;
+				gameBoard.hidden = false;
+			});
+
+			socket.on('winner', (char) => {
+				status.innerHTML = `${char} won! Refresh this page to play again.`
+			});
+
+			socket.on('picked', (char, location) => {
+				let square = squares[location];
+				square.innerHTML = char;
+				status.innerHTML = `It's ${char == 'X' ? 'O' : 'X'}'s turn`
+			});
+
+			for (let i = 0; i < squares.length; i++) {
+				let square = squares[i];
+				square.onclick = () => {
+					socket.emit('picked', i);
+				}
+			}
+		</script>
+	</body>
+</html>
