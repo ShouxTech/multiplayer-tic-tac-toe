@@ -74,7 +74,7 @@
 				waitingScreen.hidden = false;
 			});
 
-			socket.on('started', (char) => {
+			socket.on('started', char => {
 				for (square of squares) {
 					square.innerHTML = '';
 				}
@@ -83,8 +83,12 @@
 				gameBoard.hidden = false;
 			});
 
-			socket.on('winner', (char) => {
+			socket.on('winner', char => {
 				status.innerHTML = `${char} won! Refresh this page to play again.`
+			});
+
+			socket.on('tied', () => {
+				status.innerHTML = `It was a tie! Refresh this page to play again.`
 			});
 
 			socket.on('picked', (char, location) => {
